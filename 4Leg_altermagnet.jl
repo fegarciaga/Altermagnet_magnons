@@ -69,7 +69,7 @@ function Add_Heisenberg(os, J, i1, i2, ind1, ind2)
 end
 
 
-function Build_H(n, J1, J2, J3)
+function Build_H(n, J1, J2, delta)
     # Build_H construct the Hamiltonian as an MPO
     # n: number of cells
     # J1: nearest neighbor coupling
@@ -99,11 +99,11 @@ function Build_H(n, J1, J2, J3)
         # Now including the altermagnetic terms
 
         if isodd(i)
-            JA = J2
-            JB = J3
+            JA = J2+delta
+            JB = J2-delta
         else
-            JA = J3
-            JB = J2
+            JA = J2-delta
+            JB = J2+delta
         end
         
         os = Add_Heisenberg(os, JA, 2*i-1, 2*i+1, 1, 2)
@@ -155,9 +155,9 @@ end
 let
     J1 = parse(Float64, ARGS[1])
     J2 = parse(Float64, ARGS[2])
-    J3 = parse(Float64, ARGS[3])
+    delta = parse(Float64, ARGS[3])
     println(J1,"\t", J2, "\t", J3)
-    H = MPO(Build_H(n, J1, J2, J3), s)
+    H = MPO(Build_H(n, J1, J2, delta), s)
     ψ = randomMPS(s, state, 10)
     sweeps = Sweeps(35)
     maxdim!(sweeps, 10, 10, 20, 20, 20, 20, 50, 50, 50, 50, 100, 100, 100, 100, 200, 200, 200, 200, 400, 500, 500, 500, 500, 600, 600, 600)
@@ -194,8 +194,8 @@ let
         end
         println(i,"/",120)
     end
-    filename  = "results/Struct_r"*string(J2)*"_"*string(J3)*"_Nbond"*string(Nbond)*".txt"
-    filename1 = "results/Struct_i"*string(J2)*"_"*string(J3)*"_Nbond"*string(Nbond)*".txt"
+    filename  = "results/Struct_r"*string(J2)*"_"*string(delta)*"_Nbond"*string(Nbond)*".txt"
+    filename1 = "results/Struct_i"*string(J2)*"_"*string(delta)*"_Nbond"*string(Nbond)*".txt"
     writedlm(filename, real.(SztSz0))
     writedlm(filename1, imag.(SztSz0))
 end

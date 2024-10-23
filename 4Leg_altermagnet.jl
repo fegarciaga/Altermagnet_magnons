@@ -156,7 +156,7 @@ let
     J1 = parse(Float64, ARGS[1])
     J2 = parse(Float64, ARGS[2])
     delta = parse(Float64, ARGS[3])
-    println(J1,"\t", J2, "\t", J3)
+    println(J1,"\t", J2, "\t", delta)
     H = MPO(Build_H(n, J1, J2, delta), s)
     ψ = randomMPS(s, state, 10)
     sweeps = Sweeps(35)

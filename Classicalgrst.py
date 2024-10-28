@@ -32,6 +32,14 @@ def DMI_NNE(ThetaM, PhiM, D, i, j, flag):
     else:
         return D*(np.sin(ThetaM[i1,j1])*np.sin(PhiM[i1,j1])*np.cos(ThetaM[i2,j2])-np.cos(ThetaM[i1,j1])*np.sin(ThetaM[i2,j2])*np.sin(PhiM[i2,j2]))
 
+def Bext_E(ThetaM, B, i):
+    i1, j1 = i
+    return B*np.cos(ThetaM[i1,j1])
+
+def Bext_T(ThetaM, B, i):
+    i1, j1 = i
+    return -B*np.sin(ThetaM[i1,j1])
+
 def Heisenberg_T(ThetaM, PhiM, J, i, j):
     """
     Computes the Heisenberg-associated torque
@@ -56,7 +64,7 @@ def DMI_T(ThetaM, PhiM, D, i, j):
     T2phi = D*np.sin(ThetaM[i1,j1])*np.sin(ThetaM[i2,j2])*np.cos(PhiM[i2,j2]-PhiM[i1,j1])
     return T1theta, T2theta, T1phi, T2phi
 
-def DMI_NNT(ThetaM, PhiM, D, i, j, flag, flag2):
+def DMI_NNT(ThetaM, PhiM, D, i, j, flag):
     i1, j1 = i
     i2, j2 = j
     if flag>0:
@@ -69,11 +77,6 @@ def DMI_NNT(ThetaM, PhiM, D, i, j, flag, flag2):
         T2theta = D*(-np.sin(ThetaM[i1,j1])*np.sin(PhiM[i1,j1])*np.sin(ThetaM[i2,j2])-np.cos(ThetaM[i1,j1])*np.cos(ThetaM[i2,j2])*np.sin(PhiM[i2,j2]))
         T1phi = D*np.sin(ThetaM[i1,j1])*np.cos(PhiM[i1,j1])*np.cos(ThetaM[i2,j2])
         T2phi = -D*np.cos(ThetaM[i1,j1])*np.sin(ThetaM[i2,j2])*np.cos(PhiM[i2,j2])
-
-    if flag2>0:
-        return T1theta, T2theta, T1phi, T2phi
-    else:
-        return -T1theta, -T2theta, -T1phi, T2phi
 
     return T1theta, T2theta, T1phi, T2phi
 
@@ -99,9 +102,9 @@ def Compute_DMI(ThetaM, PhiM, D, i, j, E, ThetaT, PhiT):
     PhiT[i2,j2]+=d
     return E, ThetaT, PhiT
 
-def Compute_NNDMI(ThetaM, PhiM, D, i, j, E, ThetaT, PhiT, flag, flag2):
+def Compute_NNDMI(ThetaM, PhiM, D, i, j, E, ThetaT, PhiT, flag):
     E += DMI_NNE(ThetaM, PhiM, D, i, j, flag)
-    a, b, c, d = DMI_NNT(ThetaM, PhiM, D, i, j, flag, flag2)
+    a, b, c, d = DMI_NNT(ThetaM, PhiM, D, i, j, flag)
     i1, j1 = i
     i2, j2 = j
     ThetaT[i1,j1]+= a
@@ -110,8 +113,13 @@ def Compute_NNDMI(ThetaM, PhiM, D, i, j, E, ThetaT, PhiT, flag, flag2):
     PhiT[i2,j2] +=d
     return E, ThetaT, PhiT
 
+def Compute_Bext(ThetaM, B, i, E, ThetaT):
+    E += Bext_E(ThetaM, B, i)
+    ThetaT[i1,j1] += Bext_T(Theta, B, i)
+    return E, ThetaT
 
-def Optimize(ThetaM, PhiM, J, D, alpha):
+
+def Optimize(ThetaM, PhiM, J, D, B, alpha):
     J1, J2, delta = J
     D1, D2 = D
     Lx = ThetaM.shape[0]
@@ -131,13 +139,15 @@ def Optimize(ThetaM, PhiM, J, D, alpha):
                 JA = J2-delta
                 JB = J2+delta
 
+            E, ThetaT = Compute_Bext(ThetaM, B, i, E, ThetaT)
+
             # First the nearest neighbor coupling with antiferromagnetic coupling
             inew = (i+1)%Lx
             jnew = j
 
             E, ThetaT, PhiT = Compute_Heis(ThetaM, PhiM, J1, [i,j], [inew,jnew], E, ThetaT, PhiT)
             # NN DMI coupling
-            E, ThetaT, PhiT = Compute_NNDMI(ThetaM, PhiM, D1, [i,j], [inew,jnew], E, ThetaT, PhiT, 1, 1)
+            E, ThetaT, PhiT = Compute_NNDMI(ThetaM, PhiM, D1, [i,j], [inew,jnew], E, ThetaT, PhiT, 1)
 
             jnew = (j+1)%Ly
             # Altermagnetic coupling
@@ -150,7 +160,7 @@ def Optimize(ThetaM, PhiM, J, D, alpha):
 
             E, ThetaT, PhiT = Compute_Heis(ThetaM, PhiM, J1, [i,j], [inew,jnew], E, ThetaT, PhiT)
             # NN DMI coupling
-            E, ThetaT, PhiT = Compute_NNDMI(ThetaM, PhiM, D1, [i,j], [inew, jnew], E, ThetaT, PhiT, 1, -1)
+            E, ThetaT, PhiT = Compute_NNDMI(ThetaM, PhiM, D1, [i,j], [inew, jnew], E, ThetaT, PhiT, 1)
 
             jnew = (j-1)%Ly
             # Altermangtic coupling
@@ -163,7 +173,7 @@ def Optimize(ThetaM, PhiM, J, D, alpha):
 
             E, ThetaT, PhiT = Compute_Heis(ThetaM, PhiM, J1, [i,j], [inew,jnew], E, ThetaT, PhiT)
             # NN DMI coupling
-            E, ThetaT, PhiT = Compute_NNDMI(ThetaM, PhiM, D1, [i,j], [inew, jnew], E, ThetaT, PhiT, -1, 1)
+            E, ThetaT, PhiT = Compute_NNDMI(ThetaM, PhiM, D1, [i,j], [inew, jnew], E, ThetaT, PhiT, -1)
 
             inew = (i-1)%Lx
             # Altermagnetic coupling
@@ -176,7 +186,7 @@ def Optimize(ThetaM, PhiM, J, D, alpha):
 
             E, ThetaT, PhiT = Compute_Heis(ThetaM, PhiM, J1, [i,j], [inew,jnew], E, ThetaT, PhiT)
             # NN DMI coupling
-            E, ThetaT, PhiT = Compute_NNDMI(ThetaM, PhiM, D1, [i,j], [inew, jnew], E, ThetaT, PhiT, -1, -1)
+            E, ThetaT, PhiT = Compute_NNDMI(ThetaM, PhiM, D1, [i,j], [inew, jnew], E, ThetaT, PhiT, -1)
 
             inew = (i+1)%Lx
             # Altermagnetic coupling
@@ -189,18 +199,18 @@ def Optimize(ThetaM, PhiM, J, D, alpha):
     PhiM += -alpha*PhiT
     return E
 
-def Main(Lx, Ly, J, D, alpha, Nmax):
+def Main(Lx, Ly, J, D, B, alpha, Nmax):
     ThetaM, PhiM = Init(Lx, Ly)
     J1, J2, delta = J
     D1, D2 = D
     E = 0
     for i in range(Nmax):
-        E = Optimize(ThetaM, PhiM, J, D, alpha)
+        E = Optimize(ThetaM, PhiM, J, D, B, alpha)
         print(E)
-    np.savetxt(f"Classical_st/ThetaJ1_{J1}_J2_{J2}_delta_{delta}_D1_{D1}_D2_{D2}.txt", ThetaM)
-    np.savetxt(f"Classical_st/PhiJ1_{J1}_J2_{J2}_delta_{delta}_D1_{D1}_D2_{D2}.txt", PhiM)
+    np.savetxt(f"Classical_st/ThetaJ1_{J1}_J2_{J2}_delta_{delta}_D1_{D1}_D2_{D2}_B_{B}.txt", ThetaM)
+    np.savetxt(f"Classical_st/PhiJ1_{J1}_J2_{J2}_delta_{delta}_D1_{D1}_D2_{D2}_B_{B}.txt", PhiM)
     return
 
 
-Main(10, 10, [1,0.,0.], [0.1, 0], 0.01, 7000)
+Main(10, 10, [1,0.,0.], [0.1, 0], 1, 0.01, 7000)
 

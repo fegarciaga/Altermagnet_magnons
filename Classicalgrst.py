@@ -24,6 +24,14 @@ def DMI_E(ThetaM, PhiM, D, i, j):
     i2, j2 = j
     return D*np.sin(ThetaM[i1,j1])*np.sin(ThetaM[i2,j2])*np.sin(PhiM[i2,j2]-PhiM[i1,j1])
 
+def DMI_NNE(ThetaM, PhiM, D, i, j, flag):
+    i1, j1 = i
+    i2, j2 = j
+    if flag>0:
+        return D*(np.cos(ThetaM[i1,j1])*np.sin(ThetaM[i2,j2])*np.cos(PhiM[i2,j2])-np.sin(ThetaM[i1,j1])*np.cos(PhiM[i1,j1])*np.cos(ThetaM[i2,j2]))
+    else:
+        return D*(np.sin(ThetaM[i1,j1])*np.sin(PhiM[i1,j1])*np.cos(ThetaM[i2,j2])-np.cos(ThetaM[i1,j1])*np.sin(ThetaM[i2,j2])*np.sin(PhiM[i2,j2]))
+
 def Heisenberg_T(ThetaM, PhiM, J, i, j):
     """
     Computes the Heisenberg-associated torque
@@ -48,6 +56,22 @@ def DMI_T(ThetaM, PhiM, D, i, j):
     T2phi = D*np.sin(ThetaM[i1,j1])*np.sin(ThetaM[i2,j2])*np.cos(PhiM[i2,j2]-PhiM[i1,j1])
     return T1theta, T2theta, T1phi, T2phi
 
+def DMI_NNT(ThetaM, PhiM, D, i, j, flag):
+    i1, j1 = i
+    i2, j2 = j
+    if flag>0:
+        T1theta = D*(-np.sin(ThetaM[i1,j1])*np.sin(ThetaM[i2,j2])*np.cos(PhiM[i2,j2])-np.cos(ThetaM[i1,j1])*np.cos(PhiM[i1,j1])*np.cos(ThetaM[i2,j2]))
+        T2theta = D*(np.cos(ThetaM[i1,j1])*np.cos(ThetaM[i2,j2])*np.cos(PhiM[i2,j2])+np.sin(ThetaM[i1,j1])*np.cos(PhiM[i1,j1])*np.sin(ThetaM[i2,j2]))
+        T1phi = D*np.sin(ThetaM[i1,j1])*np.sin(PhiM[i1,j1])*np.cos(ThetaM[i2,j2])
+        T2phi = -D*np.cos(ThetaM[i1,j1]*np.sin(ThetaM[i2,j2])*np.sin(PhiM[i2,j2]))
+    else:
+        T1theta = D*(np.cos(ThetaM[i1,j1])*np.sin(PhiM[i1,j1])*np.cos(ThetaM[i2,j2])+np.sin(ThetaM[i1,j1])*np.sin(ThetaM[i2,j2])*np.sin(PhiM[i2,j2]))
+        T2theta = D*(-np.sin(ThetaM[i1,j1])*np.sin(PhiM[i1,j1])*np.sin(ThetaM[i2,j2])-np.cos(ThetaM[i1,j1])*np.cos(ThetaM[i2,j2])*np.sin(PhiM[i2,j2]))
+        T1phi = D*np.sin(ThetaM[i1,j1])*np.cos(PhiM[i1,j1])*np.cos(ThetaM[i2,j2])
+        T2phi = -D*np.cos(ThetaM[i1,j1])*np.sin(ThetaM[i2,j2])*np.cos(PhiM[i2,j2])
+
+    return T1theta, T2theta, T1phi, T2phi
+
 def Compute_Heis(ThetaM, PhiM, J, i, j, E, ThetaT, PhiT):
     E += Heisenberg_E(ThetaM, PhiM, J, i, j)
     a, b, c, d = Heisenberg_T(ThetaM, PhiM, J, i, j)
@@ -70,8 +94,21 @@ def Compute_DMI(ThetaM, PhiM, D, i, j, E, ThetaT, PhiT):
     PhiT[i2,j2]+=d
     return E, ThetaT, PhiT
 
+def Compute_NNDMI(ThetaM, PhiM, D, i, j, E, ThetaT, PhiT, flag):
+    E += DMI_NNE(ThetaM, PhiM, D, i, j, flag)
+    a, b, c, d = DMI_NNT(ThetaM, PhiM, D, i, j, flag)
+    i1, j1 = i
+    i2, j2 = j
+    ThetaT[i1,j1]+= a
+    ThetaT[i2,j2]+= b
+    PhiT[i1,j1] +=c
+    PhiT[i2,j2] +=d
+    return E, ThetaT, PhiT
+
+
 def Optimize(ThetaM, PhiM, J, D, alpha):
     J1, J2, delta = J
+    D1, D2 = D
     Lx = ThetaM.shape[0]
     Ly = ThetaM.shape[1]
     ThetaT = np.zeros((Lx, Ly))
@@ -94,45 +131,53 @@ def Optimize(ThetaM, PhiM, J, D, alpha):
             jnew = j
 
             E, ThetaT, PhiT = Compute_Heis(ThetaM, PhiM, J1, [i,j], [inew,jnew], E, ThetaT, PhiT)
+            # NN DMI coupling
+            E, ThetaT, PhiT = Compute_NNDMI(ThetaM, PhiM, D1, [i,j], [inew,jnew], E, ThetaT, PhiT, 1)
 
             jnew = (j+1)%Ly
             # Altermagnetic coupling
             E, ThetaT, PhiT = Compute_Heis(ThetaM, PhiM, JA, [i,j], [inew,jnew], E, ThetaT, PhiT)
-            # DMI coupling
-            E, ThetaT, PhiT = Compute_DMI(ThetaM, PhiM, D, [i,j], [inew,jnew], E, ThetaT, PhiT)
+            # NNN DMI coupling
+            E, ThetaT, PhiT = Compute_DMI(ThetaM, PhiM, D2, [i,j], [inew,jnew], E, ThetaT, PhiT)
 
             inew = (i-1)%Lx
             jnew = j
 
             E, ThetaT, PhiT = Compute_Heis(ThetaM, PhiM, J1, [i,j], [inew,jnew], E, ThetaT, PhiT)
+            # NN DMI coupling
+            E, ThetaT, PhiT = Compute_NNDMI(ThetaM, PhiM, D1, [i,j], [inew, jnew], E, ThetaT, PhiT, 1)
 
             jnew = (j-1)%Ly
             # Altermangtic coupling
             E, ThetaT, PhiT = Compute_Heis(ThetaM, PhiM, JA, [i,j], [inew,jnew], E, ThetaT, PhiT)
             # DMI coupling
-            E, ThetaT, PhiT = Compute_DMI(ThetaM, PhiM, D, [i,j], [inew,jnew], E, ThetaT, PhiT)
+            E, ThetaT, PhiT = Compute_DMI(ThetaM, PhiM, D2, [i,j], [inew,jnew], E, ThetaT, PhiT)
 
             inew = i
             jnew = (j+1)%Ly
 
             E, ThetaT, PhiT = Compute_Heis(ThetaM, PhiM, J1, [i,j], [inew,jnew], E, ThetaT, PhiT)
+            # NN DMI coupling
+            E, ThetaT, PhiT = Compute_NNDMI(ThetaM, PhiM, D1, [i,j], [inew, jnew], E, ThetaT, PhiT, -1)
 
             inew = (i-1)%Lx
             # Altermagnetic coupling
             E, ThetaT, PhiT = Compute_Heis(ThetaM, PhiM, JB, [i,j], [inew,jnew], E, ThetaT, PhiT)
             # DMI coupling
-            E, ThetaT, PhiT = Compute_DMI(ThetaM, PhiM, D, [i,j], [inew,jnew], E, ThetaT, PhiT)
+            E, ThetaT, PhiT = Compute_DMI(ThetaM, PhiM, D2, [i,j], [inew,jnew], E, ThetaT, PhiT)
 
             inew = i
             jnew = (j-1)%Ly
 
             E, ThetaT, PhiT = Compute_Heis(ThetaM, PhiM, J1, [i,j], [inew,jnew], E, ThetaT, PhiT)
+            # NN DMI coupling
+            E, ThetaT, PhiT = Compute_NNDMI(ThetaM, PhiM, D1, [i,j], [inew, jnew], E, ThetaT, PhiT, -1)
 
             inew = (i+1)%Lx
             # Altermagnetic coupling
             E, ThetaT, PhiT = Compute_Heis(ThetaM, PhiM, J1, [i,j], [inew,jnew], E, ThetaT, PhiT)
             # DMI coupling
-            E, ThetaT, PhiT = Compute_DMI(ThetaM, PhiM, D, [i,j], [inew,jnew], E, ThetaT, PhiT)
+            E, ThetaT, PhiT = Compute_DMI(ThetaM, PhiM, D2, [i,j], [inew,jnew], E, ThetaT, PhiT)
 
     # Now that all torques are computed, the angles are evolved
     ThetaM += -alpha*ThetaT
@@ -142,13 +187,15 @@ def Optimize(ThetaM, PhiM, J, D, alpha):
 def Main(Lx, Ly, J, D, alpha, Nmax):
     ThetaM, PhiM = Init(Lx, Ly)
     J1, J2, delta = J
+    D1, D2 = D
     E = 0
     for i in range(Nmax):
         E = Optimize(ThetaM, PhiM, J, D, alpha)
-    np.savetxt(f"Classical_st/ThetaJ1_{J1}_J2_{J2}_delta_{delta}_D_{D}.txt", ThetaM)
-    np.savetxt(f"Classical_st/PhiJ1_{J1}_J2_{J2}_delta_{delta}_D_{D}.txt", PhiM)
+        print(E)
+    np.savetxt(f"Classical_st/ThetaJ1_{J1}_J2_{J2}_delta_{delta}_D1_{D1}_D2_{D2}.txt", ThetaM)
+    np.savetxt(f"Classical_st/PhiJ1_{J1}_J2_{J2}_delta_{delta}_D1_{D1}_D2_{D2}.txt", PhiM)
     return
 
 
-Main(10, 10, [1,0.,0.], 0.1, 0.01, 7000)
+Main(10, 10, [1,0.,0.], [0.1, 0], 0.01, 7000)
 

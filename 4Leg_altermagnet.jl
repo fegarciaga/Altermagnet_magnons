@@ -196,8 +196,8 @@ let
         end
         println(i,"/",120)
     end
-    filename  = "results/Struct_r"*string(J2)*"_"*string(delta)*"_Nbond"*string(Nbond)*".txt"
-    filename1 = "results/Struct_i"*string(J2)*"_"*string(delta)*"_Nbond"*string(Nbond)*".txt"
+    filename  = "results/Struct_r"*string(J2)*"_"*string(delta)*"Ani_"*string(any)*"_Nbond"*string(Nbond)*".txt"
+    filename1 = "results/Struct_i"*string(J2)*"_"*string(delta)*"Ani_"*string(any)*"_Nbond"*string(Nbond)*".txt"
     writedlm(filename, real.(SztSz0))
     writedlm(filename1, imag.(SztSz0))
 end

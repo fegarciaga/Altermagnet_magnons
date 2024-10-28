@@ -115,7 +115,8 @@ def Compute_NNDMI(ThetaM, PhiM, D, i, j, E, ThetaT, PhiT, flag):
 
 def Compute_Bext(ThetaM, B, i, E, ThetaT):
     E += Bext_E(ThetaM, B, i)
-    ThetaT[i1,j1] += Bext_T(Theta, B, i)
+    i1, j1 = i
+    ThetaT[i1,j1] += Bext_T(ThetaM, B, i)
     return E, ThetaT
 
 
@@ -139,7 +140,7 @@ def Optimize(ThetaM, PhiM, J, D, B, alpha):
                 JA = J2-delta
                 JB = J2+delta
 
-            E, ThetaT = Compute_Bext(ThetaM, B, i, E, ThetaT)
+            E, ThetaT = Compute_Bext(ThetaM, B, [i,j], E, ThetaT)
 
             # First the nearest neighbor coupling with antiferromagnetic coupling
             inew = (i+1)%Lx

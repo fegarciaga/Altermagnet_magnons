@@ -55,47 +55,47 @@ ITensors.op(::OpName"SM2", ::SiteType"2S")=
   0     0       0       0
   0     0       1       0]
 
-function Add_Heisenberg(os, J, i1, i2, ind1, ind2)
+function Add_Heisenberg(os, J, any, i1, i2, ind1, ind2)
     szi1 = "SZ"*string(ind1)
     szi2 = "SZ"*string(ind2)
     spi1 = "SP"*string(ind1)
     spi2 = "SP"*string(ind2)
     smi1 = "SM"*string(ind1)
     smi2 = "SM"*string(ind2)
-    os += J, szi1, i1, szi2, i2
+    os += any*J, szi1, i1, szi2, i2
     os += 0.5*J, spi1, i1, smi2, i2
     os += 0.5*J, smi1, i1, spi2, i2
     return os
 end
 
 
-function Build_H(n, J1, J2, delta)
+function Build_H(n, J1, J2, delta, any)
     # Build_H construct the Hamiltonian as an MPO
     # n: number of cells
     # J1: nearest neighbor coupling
     # J2, J3: next nearest neighor couplings (needed for an altermagnetic model)
     os = OpSum()
     for i in 1:n
-        os = Add_Heisenberg(os, J1, i, i, 1, 2)
+        os = Add_Heisenberg(os, J1, any, i, i, 1, 2)
     end
     for i in 1:n
         if isodd(i)
-            os = Add_Heisenberg(os, J1, i, i+1, 2, 1)
+            os = Add_Heisenberg(os, J1, any, i, i+1, 2, 1)
         else
             # Periodic boundary conditions on the y direction are applied
-            os = Add_Heisenberg(os, J1, i, i-1, 2, 1)
+            os = Add_Heisenberg(os, J1, any, i, i-1, 2, 1)
         end
     end
     Nx = Int.(n/2)
 
     for i in 1:(Nx-1)
-        os = Add_Heisenberg(os, J1, 2*i-1, 2*i+1, 1, 1)
+        os = Add_Heisenberg(os, J1, any, 2*i-1, 2*i+1, 1, 1)
 
-        os = Add_Heisenberg(os, J1, 2*i-1, 2*i+1, 2, 2)
+        os = Add_Heisenberg(os, J1, any, 2*i-1, 2*i+1, 2, 2)
         
-        os = Add_Heisenberg(os, J1, 2*i, 2*i+2, 1, 1)
+        os = Add_Heisenberg(os, J1, any, 2*i, 2*i+2, 1, 1)
 
-        os = Add_Heisenberg(os, J1, 2*i, 2*i+2, 2, 2)
+        os = Add_Heisenberg(os, J1, any, 2*i, 2*i+2, 2, 2)
         # Now including the altermagnetic terms
 
         if isodd(i)
@@ -106,21 +106,21 @@ function Build_H(n, J1, J2, delta)
             JB = J2+delta
         end
         
-        os = Add_Heisenberg(os, JA, 2*i-1, 2*i+1, 1, 2)
+        os = Add_Heisenberg(os, JA, any, 2*i-1, 2*i+1, 1, 2)
 
-        os = Add_Heisenberg(os, JA, 2*i-1, 2*i+1, 2, 1)
+        os = Add_Heisenberg(os, JA, any, 2*i-1, 2*i+1, 2, 1)
             
-        os = Add_Heisenberg(os, JB, 2*i-1, 2*i+2, 2, 1)
+        os = Add_Heisenberg(os, JB, any, 2*i-1, 2*i+2, 2, 1)
            
-        os = Add_Heisenberg(os, JB, 2*i-1, 2*i+2, 1, 2)
+        os = Add_Heisenberg(os, JB, any, 2*i-1, 2*i+2, 1, 2)
 
-        os = Add_Heisenberg(os, JA, 2*i, 2*i+2, 1, 2)
+        os = Add_Heisenberg(os, JA, any, 2*i, 2*i+2, 1, 2)
 
-        os = Add_Heisenberg(os, JA, 2*i, 2*i+2, 2, 1)
+        os = Add_Heisenberg(os, JA, any, 2*i, 2*i+2, 2, 1)
 
-        os = Add_Heisenberg(os, JB, 2*i, 2*i+1, 1, 2)
+        os = Add_Heisenberg(os, JB, any, 2*i, 2*i+1, 1, 2)
 
-        os = Add_Heisenberg(os, JB, 2*i, 2*i+1, 2, 1)
+        os = Add_Heisenberg(os, JB, any, 2*i, 2*i+1, 2, 1)
     end
     return os
 end
@@ -156,8 +156,9 @@ let
     J1 = parse(Float64, ARGS[1])
     J2 = parse(Float64, ARGS[2])
     delta = parse(Float64, ARGS[3])
+    any = parse(Float64, ARGS[4])
     println(J1,"\t", J2, "\t", delta)
-    H = MPO(Build_H(n, J1, J2, delta), s)
+    H = MPO(Build_H(n, J1, J2, delta, any), s)
     ψ = randomMPS(s, state, 10)
     sweeps = Sweeps(35)
     maxdim!(sweeps, 10, 10, 20, 20, 20, 20, 50, 50, 50, 50, 100, 100, 100, 100, 200, 200, 200, 200, 400, 500, 500, 500, 500, 600, 600, 600)
@@ -165,7 +166,7 @@ let
     cutoff!(sweeps,1E-8, 1E-8, 1E-8, 1E-8, 1E-8, 1E-8, 1E-9, 1E-9, 1E-9, 1E-9, 1e-9, 1e-9, 1e-10, 1e-10, 1e-10, 1e-11)
 
     e2, ϕ2= dmrg(H, ψ, sweeps)
-    nh = 81
+    nh = 76
     Nbond = 200
     SztSz0 = zeros(ComplexF64, 151,n*2)
     ϕp = Apply_Sz(ϕ2, s, nh, 0)
@@ -183,6 +184,7 @@ let
              time_step = -1im*0.15,
              normalize = false,
              maxdim = Nbond,
+             mindim = 100,
              cutoff = 1e-6,
              outputlevel=1,
             )

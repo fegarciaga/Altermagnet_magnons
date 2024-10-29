@@ -68,8 +68,17 @@ function Add_Heisenberg(os, J, any, i1, i2, ind1, ind2)
     return os
 end
 
+function Add_NNN_DMI(os, D, i1, i2, ind1, ind2)
+    spi1 = "SP"*string(ind1)
+    spi2 = "SP"*string(ind2)
+    smi1 = "SM"*string(ind1)
+    smi2 = "SM"*string(ind2)
+    os += -D/2*1im, smi1, i1, spi2, i2
+    os += D/2*1im, spi1, i1, smi2, i2
+    return os
 
-function Build_H(n, J1, J2, delta, any)
+
+function Build_H(n, J1, J2, delta, D, any)
     # Build_H construct the Hamiltonian as an MPO
     # n: number of cells
     # J1: nearest neighbor coupling
@@ -107,20 +116,28 @@ function Build_H(n, J1, J2, delta, any)
         end
         
         os = Add_Heisenberg(os, JA, any, 2*i-1, 2*i+1, 1, 2)
+        os = Add_NNN_DMI(os, D, 2*i-1, 2*i+1, 1, 2)
 
         os = Add_Heisenberg(os, JA, any, 2*i-1, 2*i+1, 2, 1)
+        os = Add_NNN_DMI(os, D, 2*i-1, 2*i+1, 2, 1)
             
         os = Add_Heisenberg(os, JB, any, 2*i-1, 2*i+2, 2, 1)
+        os = Add_NNN_DMI(os, D, 2*i-1, 2*i+2, 2, 1)
            
         os = Add_Heisenberg(os, JB, any, 2*i-1, 2*i+2, 1, 2)
+        os = Add_NNN_DMI(os, D, 2*i-1, 2*i+2, 1, 2)
 
         os = Add_Heisenberg(os, JA, any, 2*i, 2*i+2, 1, 2)
+        os = Add_NNN_DMI(os, D, 2*i, 2*i+2, 1, 2)
 
         os = Add_Heisenberg(os, JA, any, 2*i, 2*i+2, 2, 1)
+        os = Add_NNN_DMI(os, D, 2*i, 2*i+2, 2, 1)
 
         os = Add_Heisenberg(os, JB, any, 2*i, 2*i+1, 1, 2)
+        os = Add_NNN_DMI(os, D, 2*i, 2*i+1, 1, 2)
 
         os = Add_Heisenberg(os, JB, any, 2*i, 2*i+1, 2, 1)
+        os = Add_NNN_DMI(os, D, 2*i, 2*i+1, 2, 1)
     end
     return os
 end
@@ -156,9 +173,10 @@ let
     J1 = parse(Float64, ARGS[1])
     J2 = parse(Float64, ARGS[2])
     delta = parse(Float64, ARGS[3])
-    any = parse(Float64, ARGS[4])
+    D = parse(Float64, ARGS[4])
+    any = parse(Float64, ARGS[5])
     println(J1,"\t", J2, "\t", delta)
-    H = MPO(Build_H(n, J1, J2, delta, any), s)
+    H = MPO(Build_H(n, J1, J2, delta, D, any), s)
     ψ = randomMPS(s, state, 10)
     sweeps = Sweeps(35)
     maxdim!(sweeps, 10, 10, 20, 20, 20, 20, 50, 50, 50, 50, 100, 100, 100, 100, 200, 200, 200, 200, 400, 500, 500, 500, 500, 600, 600, 600)
@@ -196,8 +214,8 @@ let
         end
         println(i,"/",120)
     end
-    filename  = "results/Struct_r"*string(J2)*"_"*string(delta)*"Ani_"*string(any)*"_Nbond"*string(Nbond)*".txt"
-    filename1 = "results/Struct_i"*string(J2)*"_"*string(delta)*"Ani_"*string(any)*"_Nbond"*string(Nbond)*".txt"
+    filename  = "results/Struct_r"*string(J2)*"_"*string(delta)*"_D_"*string(D)*"_Ani_"*string(any)*"_Nbond_"*string(Nbond)*".txt"
+    filename1 = "results/Struct_i"*string(J2)*"_"*string(delta)*"_D_"*string(D)*"_Ani_"*string(any)*"_Nbond_"*string(Nbond)*".txt"
     writedlm(filename, real.(SztSz0))
     writedlm(filename1, imag.(SztSz0))
 end

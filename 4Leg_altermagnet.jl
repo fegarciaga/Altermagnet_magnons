@@ -68,6 +68,14 @@ function Add_Heisenberg(os, J, any, i1, i2, ind1, ind2)
     return os
 end
 
+function Add_Bext(os, B, i1, ind1)
+    szi1 = "SZ"*string(ind1)
+    if abs(B)>1e-8
+        os += B, szi1, i1
+    end
+    return os
+end
+
 function Add_NNN_DMI(os, D, i1, i2, ind1, ind2)
     spi1 = "SP"*string(ind1)
     spi2 = "SP"*string(ind2)
@@ -78,6 +86,7 @@ function Add_NNN_DMI(os, D, i1, i2, ind1, ind2)
         os += D/2*1im, spi1, i1, smi2, i2
     end
     return os
+end
 
 function Add_NN_DMI(os, D, i1, i2, ind1, ind2, flag)
     szi1 = "SZ"*string(ind1)
@@ -100,9 +109,9 @@ function Add_NN_DMI(os, D, i1, i2, ind1, ind2, flag)
         end
     end
     return os
+end
 
-
-function Build_H(n, J1, J2, delta, D1, D2, any)
+function Build_H(n, J1, J2, delta, D1, D2, B, any)
     # Build_H construct the Hamiltonian as an MPO
     # n: number of cells
     # J1: nearest neighbor coupling
@@ -111,6 +120,8 @@ function Build_H(n, J1, J2, delta, D1, D2, any)
     for i in 1:n
         os = Add_Heisenberg(os, J1, any, i, i, 1, 2)
         os = Add_NN_DMI(os, D1, i, i, 1, 2, false)
+        os = Add_Bext(os, B, i, 1)
+        os = Add_Bext(os, B, i, 2)
     end
     for i in 1:n
         if isodd(i)
@@ -206,9 +217,10 @@ let
     delta = parse(Float64, ARGS[3])
     D1 = parse(Float64, ARGS[4])
     D2 = parse(Float64, ARGS[5])
-    any = parse(Float64, ARGS[6])
+    B = parse(Float64, ARGS[6])
+    any = parse(Float64, ARGS[7])
     println(J1,"\t", J2, "\t", delta)
-    H = MPO(Build_H(n, J1, J2, delta, D1, D2, any), s)
+    H = MPO(Build_H(n, J1, J2, delta, D1, D2, B, any), s)
     ψ = randomMPS(s, state, 10)
     sweeps = Sweeps(35)
     maxdim!(sweeps, 10, 10, 20, 20, 20, 20, 50, 50, 50, 50, 100, 100, 100, 100, 200, 200, 200, 200, 400, 500, 500, 500, 500, 600, 600, 600)
@@ -246,8 +258,8 @@ let
         end
         println(i,"/",120)
     end
-    filename  = "results/Struct_r"*string(J2)*"_"*string(delta)*"_D1_"*string(D1)*"_D2_"*string(D2)*"_Ani_"*string(any)*"_Nbond_"*string(Nbond)*".txt"
-    filename1 = "results/Struct_i"*string(J2)*"_"*string(delta)*"_D1_"*string(D1)*"_D2_"*string(D2)*"_Ani_"*string(any)*"_Nbond_"*string(Nbond)*".txt"
+    filename  = "results/Struct_r"*string(J2)*"_"*string(delta)*"_D1_"*string(D1)*"_D2_"*string(D2)*"_B_"*string(B)*"_Ani_"*string(any)*"_Nbond_"*string(Nbond)*".txt"
+    filename1 = "results/Struct_i"*string(J2)*"_"*string(delta)*"_D1_"*string(D1)*"_D2_"*string(D2)*"_B_"*string(B)*"_Ani_"*string(any)*"_Nbond_"*string(Nbond)*".txt"
     writedlm(filename, real.(SztSz0))
     writedlm(filename1, imag.(SztSz0))
 end

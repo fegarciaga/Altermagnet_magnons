@@ -73,8 +73,10 @@ function Add_NNN_DMI(os, D, i1, i2, ind1, ind2)
     spi2 = "SP"*string(ind2)
     smi1 = "SM"*string(ind1)
     smi2 = "SM"*string(ind2)
-    os += -D/2*1im, smi1, i1, spi2, i2
-    os += D/2*1im, spi1, i1, smi2, i2
+    if abs(D)>1e-8
+        os += -D/2*1im, smi1, i1, spi2, i2
+        os += D/2*1im, spi1, i1, smi2, i2
+    end
     return os
 
 function Add_NN_DMI(os, D, i1, i2, ind1, ind2, flag)
@@ -84,16 +86,18 @@ function Add_NN_DMI(os, D, i1, i2, ind1, ind2, flag)
     spi2 = "SP"*string(ind2)
     smi1 = "SM"*string(ind1)
     smi2 = "SM"*string(ind2)
-    if flag
-        os += -D/2*1im, spi1, i1, szi2, i2
-        os += D/2*1im, smi1, i1, szi2, i2
-        os += D/2*1im, szi1, i1, spi2, i2
-        os += -D/2*1im, szi1, i1, smi2, i2
-    else
-        os += D/2, szi1, i1, spi2, i2
-        os += D/2, szi1, i1, smi2, i2
-        os += -D/2, spi1, i1, szi2, i2
-        os += -D/2, smi1, i1, szi2, i2
+    if abs(D)>1e-8
+        if flag    
+            os += -D/2*1im, spi1, i1, szi2, i2
+            os += D/2*1im, smi1, i1, szi2, i2
+            os += D/2*1im, szi1, i1, spi2, i2
+            os += -D/2*1im, szi1, i1, smi2, i2
+        else
+            os += D/2, szi1, i1, spi2, i2
+            os += D/2, szi1, i1, smi2, i2
+            os += -D/2, spi1, i1, szi2, i2
+            os += -D/2, smi1, i1, szi2, i2
+        end
     end
     return os
 

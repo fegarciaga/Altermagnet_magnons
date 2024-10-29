@@ -77,8 +77,28 @@ function Add_NNN_DMI(os, D, i1, i2, ind1, ind2)
     os += D/2*1im, spi1, i1, smi2, i2
     return os
 
+function Add_NN_DMI(os, D, i1, i2, ind1, ind2, flag)
+    szi1 = "SZ"*string(ind1)
+    szi2 = "SZ"*string(ind2)
+    spi1 = "SP"*string(ind1)
+    spi2 = "SP"*string(ind2)
+    smi1 = "SM"*string(ind1)
+    smi2 = "SM"*string(ind2)
+    if flag
+        os += -D/2*1im, spi1, i1, szi2, i2
+        os += D/2*1im, smi1, i1, szi2, i2
+        os += D/2*1im, szi1, i1, spi2, i2
+        os += -D/2*1im, szi1, i1, smi2, i2
+    else
+        os += D/2, szi1, i1, spi2, i2
+        os += D/2, szi1, i1, smi2, i2
+        os += -D/2, spi1, i1, szi2, i2
+        os += -D/2, smi1, i1, szi2, i2
+    end
+    return os
 
-function Build_H(n, J1, J2, delta, D, any)
+
+function Build_H(n, J1, J2, delta, D1, D2, any)
     # Build_H construct the Hamiltonian as an MPO
     # n: number of cells
     # J1: nearest neighbor coupling
@@ -86,25 +106,32 @@ function Build_H(n, J1, J2, delta, D, any)
     os = OpSum()
     for i in 1:n
         os = Add_Heisenberg(os, J1, any, i, i, 1, 2)
+        os = Add_NN_DMI(os, D1, i, i, 1, 2, false)
     end
     for i in 1:n
         if isodd(i)
             os = Add_Heisenberg(os, J1, any, i, i+1, 2, 1)
+            os = Add_NN_DMI(os, D1, i, i+1, 2, 1, false)
         else
             # Periodic boundary conditions on the y direction are applied
             os = Add_Heisenberg(os, J1, any, i, i-1, 2, 1)
+            os = Add_NN_DMI(os, D1, i, i-1, 2, 1, false)
         end
     end
     Nx = Int.(n/2)
 
     for i in 1:(Nx-1)
         os = Add_Heisenberg(os, J1, any, 2*i-1, 2*i+1, 1, 1)
+        os = Add_NN_DMI(os, D1, 2*i-1, 2*i+1, 1, 1, true)
 
         os = Add_Heisenberg(os, J1, any, 2*i-1, 2*i+1, 2, 2)
+        os = Add_NN_DMI(os, D1, 2*i-1, 2*i+1, 2, 2, true)
         
         os = Add_Heisenberg(os, J1, any, 2*i, 2*i+2, 1, 1)
+        os = Add_NN_DMI(os, D1, 2*i, 2*i+2, 1, 1, true)
 
         os = Add_Heisenberg(os, J1, any, 2*i, 2*i+2, 2, 2)
+        os = Add_NN_DMI(os, D1, 2*i, 2*i+2, 2, 2, true)
         # Now including the altermagnetic terms
 
         if isodd(i)
@@ -173,10 +200,11 @@ let
     J1 = parse(Float64, ARGS[1])
     J2 = parse(Float64, ARGS[2])
     delta = parse(Float64, ARGS[3])
-    D = parse(Float64, ARGS[4])
-    any = parse(Float64, ARGS[5])
+    D1 = parse(Float64, ARGS[4])
+    D2 = parse(Float64, ARGS[5])
+    any = parse(Float64, ARGS[6])
     println(J1,"\t", J2, "\t", delta)
-    H = MPO(Build_H(n, J1, J2, delta, D, any), s)
+    H = MPO(Build_H(n, J1, J2, delta, D1, D2, any), s)
     ψ = randomMPS(s, state, 10)
     sweeps = Sweeps(35)
     maxdim!(sweeps, 10, 10, 20, 20, 20, 20, 50, 50, 50, 50, 100, 100, 100, 100, 200, 200, 200, 200, 400, 500, 500, 500, 500, 600, 600, 600)
@@ -214,8 +242,8 @@ let
         end
         println(i,"/",120)
     end
-    filename  = "results/Struct_r"*string(J2)*"_"*string(delta)*"_D_"*string(D)*"_Ani_"*string(any)*"_Nbond_"*string(Nbond)*".txt"
-    filename1 = "results/Struct_i"*string(J2)*"_"*string(delta)*"_D_"*string(D)*"_Ani_"*string(any)*"_Nbond_"*string(Nbond)*".txt"
+    filename  = "results/Struct_r"*string(J2)*"_"*string(delta)*"_D1_"*string(D1)*"_D2_"*string(D2)*"_Ani_"*string(any)*"_Nbond_"*string(Nbond)*".txt"
+    filename1 = "results/Struct_i"*string(J2)*"_"*string(delta)*"_D1_"*string(D1)*"_D2_"*string(D2)*"_Ani_"*string(any)*"_Nbond_"*string(Nbond)*".txt"
     writedlm(filename, real.(SztSz0))
     writedlm(filename1, imag.(SztSz0))
 end

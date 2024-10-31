@@ -203,7 +203,7 @@ function Apply_Sz(ϕ, s, idx, flag)
     return ϕ1
 end
 
-n = 154
+n = 102
 s = siteinds("2S",n)
 
 state = ["00" for n in 1:n]
@@ -228,9 +228,9 @@ let
     cutoff!(sweeps,1E-8, 1E-8, 1E-8, 1E-8, 1E-8, 1E-8, 1E-9, 1E-9, 1E-9, 1E-9, 1e-9, 1e-9, 1e-10, 1e-10, 1e-10, 1e-11)
 
     e2, ϕ2= dmrg(H, ψ, sweeps)
-    nh = 77
+    nh = 51
     Nbond = 200
-    SztSz0 = zeros(ComplexF64, 151,n*2)
+    SztSz0 = zeros(ComplexF64, 101,n*2)
     ϕp = Apply_Sz(ϕ2, s, nh, 0)
     for j in 1:n
         ϕa = Apply_Sz(ϕp, s, j, 0)
@@ -238,7 +238,7 @@ let
         ϕa = Apply_Sz(ϕp, s, j, 1)
         SztSz0[1,j+n]=inner(ϕ2, ϕa)
     end
-    for i in 1:150
+    for i in 1:100
         ϕp = tdvp(
              H,
              -0.15*1im,

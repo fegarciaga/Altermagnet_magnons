@@ -158,28 +158,28 @@ function Build_H(n, J1, J2, delta, D1, D2, B, any)
         end
         
         os = Add_Heisenberg(os, JA, any, 2*i-1, 2*i+1, 1, 2)
-        os = Add_NNN_DMI(os, D, 2*i-1, 2*i+1, 1, 2)
+        os = Add_NNN_DMI(os, D2, 2*i-1, 2*i+1, 1, 2)
 
         os = Add_Heisenberg(os, JA, any, 2*i-1, 2*i+1, 2, 1)
-        os = Add_NNN_DMI(os, D, 2*i-1, 2*i+1, 2, 1)
+        os = Add_NNN_DMI(os, D2, 2*i-1, 2*i+1, 2, 1)
             
         os = Add_Heisenberg(os, JB, any, 2*i-1, 2*i+2, 2, 1)
-        os = Add_NNN_DMI(os, D, 2*i-1, 2*i+2, 2, 1)
+        os = Add_NNN_DMI(os, D2, 2*i-1, 2*i+2, 2, 1)
            
         os = Add_Heisenberg(os, JB, any, 2*i-1, 2*i+2, 1, 2)
-        os = Add_NNN_DMI(os, D, 2*i-1, 2*i+2, 1, 2)
+        os = Add_NNN_DMI(os, D2, 2*i-1, 2*i+2, 1, 2)
 
         os = Add_Heisenberg(os, JA, any, 2*i, 2*i+2, 1, 2)
-        os = Add_NNN_DMI(os, D, 2*i, 2*i+2, 1, 2)
+        os = Add_NNN_DMI(os, D2, 2*i, 2*i+2, 1, 2)
 
         os = Add_Heisenberg(os, JA, any, 2*i, 2*i+2, 2, 1)
-        os = Add_NNN_DMI(os, D, 2*i, 2*i+2, 2, 1)
+        os = Add_NNN_DMI(os, D2, 2*i, 2*i+2, 2, 1)
 
         os = Add_Heisenberg(os, JB, any, 2*i, 2*i+1, 1, 2)
-        os = Add_NNN_DMI(os, D, 2*i, 2*i+1, 1, 2)
+        os = Add_NNN_DMI(os, D2, 2*i, 2*i+1, 1, 2)
 
         os = Add_Heisenberg(os, JB, any, 2*i, 2*i+1, 2, 1)
-        os = Add_NNN_DMI(os, D, 2*i, 2*i+1, 2, 1)
+        os = Add_NNN_DMI(os, D2, 2*i, 2*i+1, 2, 1)
     end
     return os
 end

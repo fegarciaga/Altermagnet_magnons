@@ -252,9 +252,9 @@ let
             )
         for j in 1:n
             ϕa = Apply_Sz(ϕp, s, j, 0)
-            SztSz0[i+1,j]= exp(1im*e2*i*0.125)*inner(ϕ2, ϕa)
+            SztSz0[i+1,j]= exp(1im*e2*i*0.15)*inner(ϕ2, ϕa)
             ϕa = Apply_Sz(ϕp, s, j, 1)
-            SztSz0[i+1,j+n] = exp(1im*e2*i*0.125)*inner(ϕ2, ϕa)
+            SztSz0[i+1,j+n] = exp(1im*e2*i*0.15)*inner(ϕ2, ϕa)
         end
         println(i,"/",120)
     end
